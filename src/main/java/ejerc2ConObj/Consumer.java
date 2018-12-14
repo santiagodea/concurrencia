@@ -1,0 +1,72 @@
+package ejerc2ConObj;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.Session;
+
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+public class Consumer implements Runnable {
+	private Connection connection = null;
+	private ConnectionFactory connectionFactory = null;
+	Session session = null;
+	private String name = "";
+
+	public Consumer(String msj) {
+		super();
+		this.name = msj;
+		try {
+			this.connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+			this.connection = this.connectionFactory.createConnection();
+			this.session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		
+		} catch (JMSException e) {
+			e.printStackTrace();
+		}
+	}
+	@Override
+	public void run() {
+
+		try {
+			Queue queue = session.createQueue("ejemploQueue");
+			// Consumer
+			connection.start();
+			
+			//para recibir un  objeto como msj (ej 2), se hace lo siguiente
+			
+			//consumo de msj
+			System.out.println("esperando mensaje...");
+			
+			MessageConsumer mc = session.createConsumer(queue);
+			ObjectMessage om = (ObjectMessage) mc.receive();
+			Item i = (Item) om.getObject();
+
+			System.out.println(this.name + " consumi un msj " + i.getDescripcion() + " con cantidad " + i.getCatidad());
+
+		} catch (JMSException e) {
+		
+			e.printStackTrace();
+
+		} finally {
+			if (session != null) {
+				try {
+					session.close();
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+}
